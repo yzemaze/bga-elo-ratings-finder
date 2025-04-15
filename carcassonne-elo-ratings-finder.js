@@ -110,6 +110,7 @@ style.innerHTML = `
 	}
 	.ratingsView #rfBackButton, .ratingsView #rfCopyButton, .ratingsView #ratingsTable {
 		display: block;
+		overflow: auto;
 	}
 	.ratingsView #rfFindButton, .ratingsView #rfCloseButton {
 		display: none;
