@@ -441,7 +441,7 @@ function saveDataToLocalStorage() {
 	rfData.configText = document.getElementById("configText").value;
 	rfData.lastSaved = Date.now();
 	localStorage.setItem("rfData", JSON.stringify(rfData));
-	console.debug("Data saved to localStorage");
+	console.debug("rfData saved to localStorage");
 }
 
 function retrieveDataFromLocalStorage() {
@@ -450,15 +450,15 @@ function retrieveDataFromLocalStorage() {
 		rfData = JSON.parse(localStorage.rfData);
 		const configText = rfData.configText ?? "";
 		document.getElementById("configText").value = configText;
-		console.debug("Data retrieved from localStorage");
+		console.debug("rfData retrieved from localStorage");
 		const lastSaved = rfData.lastSaved;
 		if (Date.now() - lastSaved < DATA_CACHE_DURATION) {
-			console.debug("Reloading retrieved data")
+			console.debug("Reloading retrieved rfData")
 			document.getElementById("rfFindButton").click();
 			applyBoxLayout();
 		}
 	} else {
-		console.debug("Could not retrieve data from localStorage");
+		console.debug("Could not retrieve rfData from localStorage");
 	}
 }
 
@@ -471,7 +471,7 @@ function saveBoxLayoutToLocalStorage(box) {
 		left: el.style.left
 	};
 	localStorage.setItem("rfBoxAttrs", JSON.stringify(rfBoxAttrs));
-	console.debug("Layout saved to localStorage");
+	console.debug("rfLayout saved to localStorage");
 }
 
 function applyBoxLayout(box) {
