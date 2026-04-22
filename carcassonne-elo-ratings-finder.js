@@ -37,7 +37,7 @@ style.innerHTML = `
 		background: #f0f0f0;
 		box-shadow: 0 3px 8px rgba(0,0,0,.3);
 		border-radius: 8px;
-		z-index: 10000;
+		z-index: 1000;
 		resize: both;
 		overflow: hidden;
 	}
