@@ -101,6 +101,7 @@ style.innerHTML = `
 		margin: 0;
 		height: fit-content;
 		width: fit-content;
+		border: none;
 	}
 	#rfFindButton, #rfCloseButton {
 		display: block;
@@ -129,6 +130,12 @@ style.innerHTML = `
 	}
 	#ratingsTable.matches tr:nth-child(even):not(:last-child) td {
 		border-bottom: 1px dashed black;
+	}
+	html.dark #ratingsBox {
+		background-color: var(--game-palette-bga-gray-244, #3c4054);
+		#boxHead {
+			background-color: #1f2937;
+		}
 	}
  `;
 document.head.appendChild(style);
