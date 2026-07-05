@@ -4,13 +4,13 @@
  * Display Carcassonne Elo ratings given a list of players or fixtures.
  * cf. README.md or https://github.com/yzemaze/bga-duel-box
  *
- * @version 1.0.0
+ * @version 1.1.0
  */
 
 (function() {
 "use strict";
 
-const VERSION = "1.0.0";
+const VERSION = "1.1.0";
 
 function log(level, ...args) {
 	console[level]("[RF]", ...args);
