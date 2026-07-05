@@ -5,25 +5,37 @@ const SOURCE_FILE = path.join(__dirname, "carcassonne-elo-ratings-finder.js");
 const TARGET_FILE = path.join(__dirname, "README.md");
 
 function updateBookmarklet() {
-	try {
-		const sourceCode = fs.readFileSync(SOURCE_FILE, "utf8");
-		const encoded = "javascript:(function()%7B" + encodeURIComponent(sourceCode) + "%7D)()%3B";
+    try {
+        let sourceCode = fs.readFileSync(SOURCE_FILE, "utf8");
 
-		let readme = fs.readFileSync(TARGET_FILE, "utf8");
-		const regex = /javascript:\(function\(\)%7B[\s\S]*?%7D\)\(\)%3B/;
+        sourceCode = sourceCode.replace(/\/\*[\s\S]*?\*\//g, "");
+        sourceCode = sourceCode
+            .split("\n")
+            .filter(line => !line.trim().startsWith("//"))
+            .join("\n")
+            .trim();
 
-		if (regex.test(readme)) {
-			readme = readme.replace(regex, encoded);
-			fs.writeFileSync(TARGET_FILE, readme, "utf8");
-			console.log("[RF] README.md bookmarklet successfully updated.");
-		} else {
-			console.error("[RF] Error: Could not find the bookmarklet placeholder in README.md");
-			process.exit(1);
-		}
-	} catch (err) {
-		console.error("[RF] Error:", err.message);
-		process.exit(1);
-	}
+        const encoded = "javascript:" + encodeURIComponent(sourceCode);
+        let readme = fs.readFileSync(TARGET_FILE, "utf8");
+        const regex = /javascript:[a-zA-Z0-9%._~!( )*'-]*/g;
+
+        if (regex.test(readme)) {
+            const updatedReadme = readme.replace(regex, encoded);
+            
+            if (readme !== updatedReadme) {
+                fs.writeFileSync(TARGET_FILE, updatedReadme, "utf8");
+                console.log("[RF] README.md successfully updated with the wrapped source code.");
+            } else {
+                console.log("[RF] README.md is already up to date.");
+            }
+        } else {
+            console.error("[RF] Error: Could not find an existing 'javascript:...' link in README.md");
+            process.exit(1);
+        }
+    } catch (err) {
+        console.error("[RF] Error:", err.message);
+        process.exit(1);
+    }
 }
 
 updateBookmarklet();
