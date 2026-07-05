@@ -3,10 +3,18 @@
  *
  * Display Carcassonne Elo ratings given a list of players or fixtures.
  * cf. README.md or https://github.com/yzemaze/bga-duel-box
+ *
+ * @version 1.0.0
  */
 
 (function() {
 "use strict";
+
+const VERSION = "1.0.0";
+
+function log(level, ...args) {
+	console[level]("[RF]", ...args);
+}
 
 const REQUEST_INTERVAL = 100; // ms
 const CACHE_DURATION = 7*24*60*60*1000; // 7d in ms
@@ -140,6 +148,7 @@ style.innerHTML = `
  `;
 document.head.appendChild(style);
 
+log("log", "Carcassonne Elo Ratings Finder v" + VERSION + " initialized");
 createUi();
 
 /**
@@ -151,8 +160,10 @@ function createUi() {
 	let ratingsBox = document.getElementById(boxId);
 	if (ratingsBox) {
 		ratingsBox.style.display = "grid";
+		log("debug", "UI already exists, displaying box");
 		return;
 	}
+	log("debug", "Creating UI elements");
 
 	ratingsBox = document.createElement("div");
 	ratingsBox.id = boxId;
@@ -227,6 +238,7 @@ function createUi() {
 	resizeObserver.observe(ratingsBox);
 
 	configText.addEventListener("paste", (event) => {
+		log("debug", "Paste event triggered");
 		// Just check if pasted text is in the form of:
 		//
 		//   player1
@@ -260,6 +272,7 @@ function createUi() {
 	});
 
 	findButton.onclick = async function () {
+		log("debug", "Find button clicked");
 		configText.disabled = true;
 		findButton.disabled = true;
 		saveDataToLocalStorage();
@@ -269,16 +282,19 @@ function createUi() {
 	};
 
 	backButton.onclick = function () {
+		log("debug", "Back button clicked");
 		document.getElementById("boxBody").classList.toggle("ratingsView");
 		ratingsTable.innerHTML = "";
 		configText.disabled = false;
 	};
 
 	closeButton.onclick = function () {
+		log("debug", "Close button clicked");
 		document.body.removeChild(ratingsBox);
 	}
 
 	copyButton.onclick = function () {
+		log("debug", "Copy button clicked");
 		const exportText = document.getElementById("ratingsTable").innerText;
 		navigator.clipboard.writeText(exportText);
 	}
@@ -292,17 +308,18 @@ function createUi() {
  */
 function getPlayerId(name) {
 	const currentTime = new Date().getTime();
-	const cacheKey = `playerId-${name.toLowerCase()}`;
+	const cacheKey = "playerId-" + name.toLowerCase();
 	const cached = localStorage.getItem(cacheKey);
 	if (cached) {
 		const data = JSON.parse(cached);
 		if (currentTime - data.timestamp < CACHE_DURATION) {
-			console.debug(`Using cached id ${data.id} for ${name}`);
+			log("debug", "Using cached id " + data.id + " for " + name);
 			return data.id;
 		}
 	}
 
 	try {
+		log("debug", "Fetching player id for: " + name);
 		const response = dojo.xhrGet({
 			url: "https://boardgamearena.com/player/player/findplayer.html",
 			content: { q: name, start: 0, count: Infinity },
@@ -312,16 +329,16 @@ function getPlayerId(name) {
 
 		for (const currentUser of response.results[0].items) {
 			if (currentUser.q.toLowerCase() === name.toLowerCase()) {
-				console.debug(`Found id ${currentUser.id} for ${name}`);
+				log("debug", "Found id " + currentUser.id + " for " + name);
 				localStorage.setItem(cacheKey, JSON.stringify({ id: currentUser.id, timestamp: currentTime }));
 				return currentUser.id;
 			}
 		}
-		console.error(`Could not find user ${name}`);
+		log("error", "Could not find user " + name);
 		throw "Player not found";
 	}
 	catch (error) {
-		console.error(`Could not find user ${name}`);
+		log("error", "Could not find user " + name, error);
 		throw error;
 	}
 }
@@ -332,11 +349,16 @@ function getPlayerId(name) {
  */
 function parsePlayerStats(player_page) {
 	let player = player_page.querySelector("#player_name").innerText.trim();
+	log("debug", "Parsing player page stats for: " + player);
 	/* stats per game */
 	let gameDivs = player_page.getElementsByClassName("palmares_game");
+	log("debug", "Found " + gameDivs.length + " game sections");
+	let foundGame = false;
 	for (let i = 0; i < gameDivs.length; i++) {
 		let game = gameDivs[i].getElementsByClassName("gamename")[0].innerText;
 		if (game == GAME_NAME) {
+			foundGame = true;
+			log("debug", "Found game " + GAME_NAME + " section");
 			var rank = "";
 			let rankStr = gameDivs[i].getElementsByClassName("gamerank_no")[0];
 			if (rankStr) rank = rankStr.innerText.match(/(\d+)?/)[0];
@@ -351,8 +373,12 @@ function parsePlayerStats(player_page) {
 				var won = Number(arr[2].replace(/\s/g, ''));
 			}
 			var elo = gameDivs[i].getElementsByClassName("gamerank_value")[0].innerText;
+			log("debug", "Parsed stats for " + player + ": Elo=" + elo + ", Rank=" + rank + ", Matches=" + matches + ", Won=" + won);
 			i = gameDivs.length;
 		}
+	}
+	if (!foundGame) {
+		log("debug", "Game " + GAME_NAME + " stats not found in player page for " + player);
 	}
 	return [player, elo, rank, matches, won, (won / matches * 100).toFixed(2)];
 }
@@ -370,20 +396,25 @@ function printPlayerStats() {
 			ratingsTable.classList.add("matches");
 		}
 		players = players.filter(e => e);
+		log("debug", "Parsed players list: ", players);
 		let playerValues;
 
 		const thead = ratingsTable.createTHead();
 		const hrow = thead.insertRow();
 		["Name", "Elo", "Rank", "Matches", "Won", "%"].forEach(h => {
-			hrow.insertCell().outerHTML = `<th>${h}</th>`;
+			hrow.insertCell().outerHTML = "<th>" + h + "</th>";
 		});
 		const tbody = ratingsTable.createTBody();
 
 		for (let i = 0; i < players.length; ++i) {
+			log("debug", "Fetching stats for player (" + (i + 1) + "/" + players.length + "): " + players[i]);
 			await sleep(REQUEST_INTERVAL);
 			let row = tbody.insertRow();
-			const response = await fetch('https://boardgamearena.com/player?name=' + players[i]);
+			const playerUrl = "https://boardgamearena.com/player?name=" + players[i];
+			log("debug", "Fetching stats from URL: " + playerUrl);
+			const response = await fetch(playerUrl);
 			const html_str = await response.text();
+			log("debug", "Received response for " + players[i] + " (" + html_str.length + " bytes)");
 			const doc = parser.parseFromString(html_str, "text/html");
 			try {
 				playerValues = parsePlayerStats(doc);
@@ -395,10 +426,11 @@ function printPlayerStats() {
 			} catch (err) {
 				row.insertCell(0).innerHTML = players[i];
 				row.insertCell(1).innerHTML = "n/a";
-				console.error(players[i] + "\n" + err);
-				console.error(doc);
+				log("error", "Error retrieving or parsing stats for player " + players[i] + ": " + err);
+				log("error", "Error response document snapshot: ", doc);
 			}
 		}
+		log("debug", "All player stats retrieval complete.");
 	};
 	loading();
 }
@@ -448,7 +480,7 @@ function saveDataToLocalStorage() {
 	rfData.configText = document.getElementById("configText").value;
 	rfData.lastSaved = Date.now();
 	localStorage.setItem("rfData", JSON.stringify(rfData));
-	console.debug("rfData saved to localStorage");
+	log("debug", "rfData saved to localStorage: ", rfData);
 }
 
 function retrieveDataFromLocalStorage() {
@@ -457,15 +489,15 @@ function retrieveDataFromLocalStorage() {
 		rfData = JSON.parse(localStorage.rfData);
 		const configText = rfData.configText ?? "";
 		document.getElementById("configText").value = configText;
-		console.debug("rfData retrieved from localStorage");
+		log("debug", "rfData retrieved from localStorage: ", rfData);
 		const lastSaved = rfData.lastSaved;
 		if (Date.now() - lastSaved < DATA_CACHE_DURATION) {
-			console.debug("Reloading retrieved rfData")
+			log("debug", "Reloading retrieved rfData (within cache duration)");
 			document.getElementById("rfFindButton").click();
 			applyBoxLayout();
 		}
 	} else {
-		console.debug("Could not retrieve rfData from localStorage");
+		log("debug", "Could not retrieve rfData from localStorage (no saved data found)");
 	}
 }
 
@@ -478,7 +510,7 @@ function saveBoxLayoutToLocalStorage(box) {
 		left: el.style.left
 	};
 	localStorage.setItem("rfBoxAttrs", JSON.stringify(rfBoxAttrs));
-	console.debug("rfLayout saved to localStorage");
+	log("debug", "rfLayout saved to localStorage: ", rfBoxAttrs);
 }
 
 function applyBoxLayout(box) {
@@ -489,6 +521,7 @@ function applyBoxLayout(box) {
 		el.style.width = rfBoxAttrs.width;
 		el.style.top = rfBoxAttrs.top;
 		el.style.left = rfBoxAttrs.left;
+		log("debug", "rfBoxAttrs applied: ", rfBoxAttrs);
 	}
 	saveBoxLayoutToLocalStorage(el);
 }
