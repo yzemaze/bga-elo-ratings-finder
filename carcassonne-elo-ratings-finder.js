@@ -4,7 +4,7 @@
  * Display Carcassonne Elo ratings given a list of players or fixtures.
  * cf. README.md or https://github.com/yzemaze/bga-duel-box
  *
- * @version 1.1.0
+ * @version 1.2.0
  */
 
 (function() {
@@ -355,8 +355,9 @@ function parsePlayerStats(player_page) {
 	log("debug", "Found " + gameDivs.length + " game sections");
 	let foundGame = false;
 	for (let i = 0; i < gameDivs.length; i++) {
-		let game = gameDivs[i].getElementsByClassName("gamename")[0].innerText;
-		if (game == GAME_NAME) {
+		let gameLink = gameDivs[i].getElementsByClassName("gamename")[0];
+		let game = gameLink.getAttribute("href");
+		if (game && game.toLowerCase().includes(GAME_NAME.toLowerCase())) {
 			foundGame = true;
 			log("debug", "Found game " + GAME_NAME + " section");
 			var rank = "";
