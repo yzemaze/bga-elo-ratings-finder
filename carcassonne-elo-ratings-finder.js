@@ -137,7 +137,7 @@ style.innerHTML = `
 		text-align: right;
 	}
 	#ratingsTable.matches tr:nth-child(even):not(:last-child) td {
-		border-bottom: 1px dashed black;
+		border-bottom: 1px dashed var(--palette-bga-gray-950);
 	}
 	html.dark #ratingsBox {
 		background-color: var(--game-palette-bga-gray-244, #3c4054);
